@@ -1,16 +1,18 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
 ====================================================================================================
     ProjectName   ：  Spider
-    FileName      ：  Telegram
-    CreateTime    ：  2024/8/9 17:03:58
+    FileName      ：  TelegramNode
+    CreateTime    ：  2024-8-9 17:03:58
     Author        ：  Administrator
     Email         ：
     PythonCompiler：  3.9.9
     IDE           ：  PyCharm 2020.3.4
     Version       ：  1.0
-    Description   ：  文件描述
+    Description   ：  爬取 Telegram 上的 V2Ray 节点，需要安装依赖：
+                          pip install requests bs4
 ====================================================================================================
 """
 
