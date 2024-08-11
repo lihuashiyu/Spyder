@@ -36,9 +36,10 @@ function flush_env()
     echo "    **************************** 备份数据 ****************************    "
     if [ -e "${SERVICE_DIR}/data" ]; then
         back_data=$(date -d "1 hour ago" +"%Y-%m-%d-%H")                       # 获取一小时前的时间
-        mv data "${back_data}"                                                 # 备份数据
+        mv  "${SERVICE_DIR}/data" "${SERVICE_DIR}/${back_data}"                # 备份数据
     fi
     
+    cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
     mkdir -p  "${SERVICE_DIR}/data" "${SERVICE_DIR}/logs"                      # 创建日志目录
 }
     
@@ -70,6 +71,7 @@ function spider_run()
     sleep 3
     echo "    **************************** 同步数据 ****************************    "
     
+    cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
     sshpass -p "${REMOTE_MAP["password"]}" scp -P "${REMOTE_MAP["port"]}" "${SERVICE_DIR}/data/v2ray-node.txt" \
         "${REMOTE_MAP["user"]}@${REMOTE_MAP["host"]}:${REMOTE_MAP["path"]}"
 }
