@@ -38,9 +38,12 @@ function flush_env()
         back_data=$(date -d "1 hour ago" +"%Y-%m-%d-%H")                       # 获取一小时前的时间
         mv  "${SERVICE_DIR}/data" "${SERVICE_DIR}/${back_data}"                # 备份数据
     fi
-    
+
     cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
+    find  "${SERVICE_DIR}"      -maxdepth 1 -mtime +1  -type d -name "*"     -exec rm -rf {} \;    # 删除超过一天的数据
+
     mkdir -p  "${SERVICE_DIR}/data" "${SERVICE_DIR}/logs"                      # 创建日志目录
+    find  "${SERVICE_DIR}/logs" -maxdepth 1 -mtime +10 -type f -name "*.log" -exec rm -f {} \;     # 删除超过 10 天的日志
 }
     
 
