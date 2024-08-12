@@ -14,14 +14,22 @@ SERVICE_DIR=$(dirname "$(readlink -e "$0")")                                   #
 SERVICE_NAME="telegram-node"                                                   # 项目名称
 LOG_FILE="${SERVICE_NAME}-$(date "+%Y-%m-%d-%H").log"                          # 操作日志文件
 GIT_PROJECT_DIR=$(cd "${SERVICE_DIR}/../" || exit; pwd)                        # git 项目目录
-
+    
+remote_host="1.1.1.1"                                                          # 需要远程同步的 主机名
+remote_port="22"                                                               # 需要远程同步的 scp 端口号
+remote_user="root"                                                             # 需要远程同步的 用户名
+remote_password="111111"                                                       # 需要远程同步的 用户密码
+remote_path="${HOME}"                                                          # 需要远程同步的 文件路径
+   
 
 # 刷新环境变量
 function flush_env()
 {
     local back_data                                                            # 定义局部变量
     
-    export -A REMOTE_MAP=(["host"]=1.1.1.1 ["port"]=22 ["user"]=root ["password"]=111111 ["path"]="${HOME}") # 远程节点参数
+    export -A REMOTE_MAP=(["host"]="${remote_host}"  ["port"]="${remote_port}"           \
+                          ["user"]="${remote_user}"  ["password"]="${remote_password}"   \
+                          ["path"]="${remote_path}")                           # 远程节点参数
     
     echo "    ************************** 刷新环境变量 **************************    "
     source "/etc/profile"                                                      # 系统环境变量文件路径
@@ -38,12 +46,13 @@ function flush_env()
         back_data=$(date -d "1 hour ago" +"%Y-%m-%d-%H")                       # 获取一小时前的时间
         mv  "${SERVICE_DIR}/data" "${SERVICE_DIR}/${back_data}"                # 备份数据
     fi
-
+    
     cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
-    find  "${SERVICE_DIR}"      -maxdepth 1 -mtime +1  -type d -name "*"     -exec rm -rf {} \;    # 删除超过一天的数据
-
-    mkdir -p  "${SERVICE_DIR}/data" "${SERVICE_DIR}/logs"                      # 创建日志目录
-    find  "${SERVICE_DIR}/logs" -maxdepth 1 -mtime +10 -type f -name "*.log" -exec rm -f {} \;     # 删除超过 10 天的日志
+    mkdir -p  "${SERVICE_DIR}/data" "${SERVICE_DIR}/logs"                      # 创建存储数据和日志目录
+    
+    echo "    *************************** 删除旧数据 ***************************    "    
+    find  "${SERVICE_DIR}"      -maxdepth 1 -mtime +1  -type d -name "*"     -exec rm -rf {} \;    # 删除超过 一 天的数据
+    find  "${SERVICE_DIR}/logs" -maxdepth 1 -mtime +10 -type f -name "*.log" -exec rm -f  {} \;    # 删除超过 10 天的日志
 }
     
 
@@ -59,6 +68,7 @@ function update_git_project()
         git pull                                                               # 拉去最新代码
     } >> "${SERVICE_DIR}/logs/${LOG_FILE}" 2>&1
     
+    cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
     cp -fpr "${GIT_PROJECT_DIR}/V2Ray/TelegramNode.py"  "${SERVICE_DIR}/TelegramNode.py" # 复制爬虫文件
 }
     
@@ -70,13 +80,12 @@ function spider_run()
     
     cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
     python3 "${SERVICE_DIR}/TelegramNode.py"  >> "${SERVICE_DIR}/logs/${LOG_FILE}" 2>&1
-    
     sleep 3
-    echo "    **************************** 同步数据 ****************************    "
     
-    cd "${SERVICE_DIR}"  || exit                                               # 切换到项目目录
-    sshpass -p "${REMOTE_MAP["password"]}" scp -P "${REMOTE_MAP["port"]}" "${SERVICE_DIR}/data/v2ray-node.txt" \
-        "${REMOTE_MAP["user"]}@${REMOTE_MAP["host"]}:${REMOTE_MAP["path"]}"
+    echo "    **************************** 同步数据 ****************************    "
+    sshpass -p "${REMOTE_MAP["password"]}"                                          \
+        scp -P "${REMOTE_MAP["port"]}" "  ${SERVICE_DIR}/data/v2ray-node.txt"       \
+               "${REMOTE_MAP["user"]}@${REMOTE_MAP["host"]}:${REMOTE_MAP["path"]}"
 }
     
 
@@ -127,11 +136,11 @@ function usage()
     file_name=$(echo "$0" | awk -F '/' '{ print $NF }')                        # 获取文件名
     
     echo "    usage： ${SERVICE_DIR}/${file_name} --arg=value    "
-    echo "        --host=[HOST]           default 1.1.1.1"
-    echo "        --port=[PORT]           default 22"
-    echo "        --user=[USER]           default root"
-    echo "        --password=[PASSWORD]   default 111111"
-    echo "        --path=[PATH]           default ${HOME}"
+    echo "        --host=[HOST]           default ${remote_host}"
+    echo "        --port=[PORT]           default ${remote_port}"
+    echo "        --user=[USER]           default ${remote_user}"
+    echo "        --password=[PASSWORD]   default ${remote_password}"
+    echo "        --path=[PATH]           default ${remote_path}"
 }
     
 
